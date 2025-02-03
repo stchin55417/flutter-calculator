@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:expressions/expressions.dart'; // External package for expression evaluation
+import 'dart:math'; // Import for sqrt function
 
 void main() {
   runApp(const MyApp());
@@ -8,7 +9,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -42,10 +42,40 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     try {
       final expression = Expression.parse(_expression);
       final evaluator = const ExpressionEvaluator();
-      final result = evaluator.eval(expression, {});
+      final result = evaluator.eval(expression, {
+        'sqrt': (num x) => sqrt(x),
+      });
       setState(() {
         _result = result.toString();
       });
+    } catch (e) {
+      setState(() {
+        _result = 'Error';
+      });
+    }
+  }
+
+  void _applySqrt() {
+    try {
+      if (_expression.isEmpty)
+        return; // Prevent applying sqrt to an empty expression
+
+      final expression = Expression.parse(_expression);
+      final evaluator = const ExpressionEvaluator();
+      final result = evaluator.eval(expression, {});
+
+      if (result is num && result >= 0) {
+        // Ensure it's a valid number for sqrt
+        final sqrtResult = sqrt(result);
+        setState(() {
+          _expression = sqrtResult.toString();
+          _result = ''; // Clear the result until next evaluation
+        });
+      } else {
+        setState(() {
+          _result = 'Error'; // Handle negative numbers or invalid inputs
+        });
+      }
     } catch (e) {
       setState(() {
         _result = 'Error';
@@ -68,8 +98,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       ),
       body: Center(
         child: Column(
-          mainAxisSize: MainAxisSize
-              .min, // Ensures the column only takes up the space it needs
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(16),
@@ -80,8 +109,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
             ),
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.center, // Center buttons horizontally
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildButton('7'),
                 _buildButton('8'),
@@ -119,8 +147,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                _buildButton('sqrt'), // Add open parenthesis for sqrt
                 SizedBox(
-                  width: 320, // Adjust width to match the button rows
+                  width: 320,
                   child: TextButton(
                     onPressed: _clear,
                     child: const Text('C', style: TextStyle(fontSize: 24)),
@@ -140,6 +169,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         onPressed: () {
           if (value == '=') {
             _calculateResult();
+          } else if (value == 'sqrt') {
+            _applySqrt();
           } else {
             _addToExpression(value);
           }
